@@ -2,6 +2,8 @@ package main.java.org.example;
 
 import javax.swing.*;
 import javax.swing.border.Border;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowEvent;
@@ -21,6 +23,33 @@ public class Client extends Thread {
     public class Message{
         public final String sender,receiver,text;
         public Message(String sender, String receiver, String text){this.sender=sender; this.receiver=receiver; this.text=text;}
+    }
+
+    public class ChatLine extends JPanel{
+        public ChatLine(Message message)
+        {
+            super();
+            this.setLayout(new BorderLayout());
+            this.setBackground(new Color(0,0,0));
+
+            JLabel labelSender=new JLabel(message.sender+" > "+message.receiver+" ");
+            labelSender.setMaximumSize(new Dimension(3000,30));
+            labelSender.setBackground(new Color(0,0,0));
+            labelSender.setForeground(new Color(0,255,255));
+            labelSender.setHorizontalAlignment(SwingConstants.LEFT);
+            labelSender.setVerticalAlignment(SwingConstants.TOP);
+
+            JLabel label=new JLabel(message.text);
+            label.setMaximumSize(new Dimension(3000,30));
+            label.setBackground(new Color(0,0,0));
+            label.setForeground(new Color(0,255,0));
+            label.setHorizontalAlignment(SwingConstants.LEFT);
+            label.setVerticalAlignment(SwingConstants.TOP);
+
+            this.setMaximumSize(new Dimension(3000,label.getPreferredSize().height));
+            this.add(labelSender,BorderLayout.WEST);
+            this.add(label,BorderLayout.CENTER);
+        }
     }
 
     private final ArrayList<Message> messages=new ArrayList<>();
@@ -49,13 +78,15 @@ public class Client extends Thread {
 
         this.console=new JTextArea();
         this.console.setBackground(new Color(20,20,20));
-        this.console.setCaretColor(new Color(0,255,0));
+        this.console.setForeground(new Color(0,255,0));
         this.console.setMinimumSize(new Dimension(100,50));
+        this.console.setMaximumSize(new Dimension(400,50));
 
         this.windowContent2=new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,this.contacts,this.chat);
         this.windowContent1=new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,this.windowContent2,this.console);
 
-        this.window=new JFrame("roblox client");
+        this.window=new JFrame("roblox client - "+this.name);
+        this.window.setMinimumSize(new Dimension(600,600));
         this.window.setLayout(new GridLayout(1,1));
         this.window.add(this.windowContent1);
 
@@ -72,6 +103,8 @@ public class Client extends Thread {
         this.window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.window.pack();
         this.window.setVisible(true);
+
+        refreshChat();
     }
 
     public void run()
@@ -253,6 +286,8 @@ public class Client extends Thread {
         if(currentPartner!=null&&!people.contains(currentPartner))
             people.add(currentPartner);
 
+        people.add("New contact...");
+
         JPanel scrollableContent=new JPanel();
         scrollableContent.setLayout(new BoxLayout(scrollableContent,BoxLayout.Y_AXIS));
         scrollableContent.setBackground(new Color(30,30,30));
@@ -265,11 +300,23 @@ public class Client extends Thread {
             button.setText(people.get(i));
             button.setHorizontalAlignment(SwingConstants.LEFT);
             button.setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
-            int finalI = i;
-            button.addActionListener((e)->{
-                currentPartner=people.get(finalI);
-                refreshChat();
-            });
+            if(people.get(i).equals("New contact..."))
+            {
+                button.addActionListener((e)->{
+                    String name=JOptionPane.showInputDialog("who","");
+                    if(name==null)
+                        return;
+                    currentPartner=name;
+                    refreshChat();
+                });
+            }
+            else {
+                int finalI = i;
+                button.addActionListener((e)->{
+                    currentPartner=people.get(finalI);
+                    refreshChat();
+                });
+            }
             scrollableContent.add(button);
         }
         JScrollPane scrollable=new JScrollPane(scrollableContent);
@@ -311,15 +358,12 @@ public class Client extends Thread {
         {
             if(messages.get(i).sender.equals(currentPartner)||messages.get(i).receiver.equals(currentPartner))
             {
-                JLabel label=new JLabel(messages.get(i).sender+" > "+messages.get(i).receiver+": "+messages.get(i).text);
-                label.setBackground(new Color(0,0,0));
-                label.setForeground(new Color(0,255,0));
-                label.setHorizontalAlignment(SwingConstants.LEFT);
-                scrollableContentChat.add(label);
+                ChatLine cl=new ChatLine(messages.get(i));
+                scrollableContentChat.add(cl);
             }
         }
 
-        JScrollPane scrollableChat=new JScrollPane(scrollableContentChat);
+        JScrollPane scrollableChat=new JScrollPane(scrollableContentChat,JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
         this.chat.setLayout(new BoxLayout(this.chat,BoxLayout.Y_AXIS));
         this.chat.add(scrollableChat);
@@ -330,11 +374,11 @@ public class Client extends Thread {
         this.windowContent2.revalidate();
     }
 
+
     public static void main(String[] args)
     {
         String name=null;
-        System.out.print("What's your name: ");
-        try{name=new BufferedReader(new InputStreamReader(System.in)).readLine();}catch(Exception ex){}
+        name=JOptionPane.showInputDialog("who","");
         if(name==null) name="i'm gay";
 
         Thread thread=new Client(name);

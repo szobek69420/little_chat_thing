@@ -1,10 +1,8 @@
 package main.java.org.example;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -26,8 +24,8 @@ public class Server extends Thread{
             name="User "+currentId++;
             try{
                 socket = _socket;
-                out=new PrintWriter(socket.getOutputStream(),true);
-                in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                out=new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8),true);
+                in = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
             }
             catch(Exception ex)
             {
@@ -69,9 +67,12 @@ public class Server extends Thread{
                 if(line==null)
                     break;
 
+                System.out.println(line);
                 String[] words=line.split("\t");
                 if(words[0].equals("COMMAND"))
+                {
                     handleCommand(words);
+                }
                 else if(words[0].equals("MESSAGE"))
                 {
                     server.forwardMessage(this.name,words[1],line.substring(words[1].length()+9));
